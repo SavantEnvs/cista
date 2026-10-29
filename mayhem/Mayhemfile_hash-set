@@ -1,0 +1,9 @@
+project: savantenvs/cista
+target: cista-fuzz-hash-set
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/cista-fuzz-hash-set/testsuite
+cmds:
+  - cmd: /mayhem/cista-fuzz-hash-set
+    libfuzzer: true
+    timeout: 10
