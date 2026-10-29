@@ -1,0 +1,9 @@
+project: savantenvs/cista
+target: cista-fuzz-multimap-verification
+testsuite:
+  - https://$MAYHEM_DOMAIN/$MAYHEM_PROJECT/$MAYHEM_TARGET/testsuite.tar
+  - file://mayhem/cista-fuzz-multimap-verification/testsuite
+cmds:
+  - cmd: /mayhem/cista-fuzz-multimap-verification
+    libfuzzer: true
+    timeout: 10
