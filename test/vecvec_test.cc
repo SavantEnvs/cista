@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <set>
 #include <stdexcept>
+#include <vector>
 
 #include "doctest.h"
 
@@ -9,6 +11,7 @@
 #include "cista.h"
 #else
 #include "cista/containers/mmap_vec.h"
+#include "cista/containers/mutable_fws_multimap.h"
 #include "cista/containers/paged.h"
 #include "cista/containers/paged_vecvec.h"
 #include "cista/containers/vecvec.h"
@@ -275,4 +278,43 @@ TEST_CASE("paged_vecvec vector") {
   CHECK_EQ("hellox", d[key{0}].view());
   CHECK_EQ("worldx", d[key{1}].view());
   CHECK_EQ("testx", d[key{2}].view());
+}
+TEST_CASE("make_vecvec") {
+  using key = cista::strong<unsigned, struct x_>;
+  using expected_t = std::vector<std::vector<int>>;
+
+  auto const expected = expected_t{{1, 2}, {}, {3}};
+  auto const check = [&](cista::raw::vecvec<key, int>& v) {
+    REQUIRE_EQ(expected.size(), v.size());
+    for (auto i = 0U; i != expected.size(); ++i) {
+      CHECK(std::equal(begin(expected[i]), end(expected[i]), begin(v[key{i}]),
+                       end(v[key{i}])));
+    }
+  };
+
+  auto from_vector = cista::raw::make_vecvec<key>(expected);
+  check(from_vector);
+
+  using data_t = cista::paged<cista::raw::vector<int>>;
+  using idx_t = cista::raw::vector<data_t::page_t>;
+  auto paged = cista::paged_vecvec<idx_t, data_t, key>{};
+  for (auto const& x : expected) {
+    paged.emplace_back(x);
+  }
+  auto from_paged = cista::raw::make_vecvec(paged);
+  static_assert(std::is_same_v<std::decay_t<decltype(from_paged)>,
+                               cista::raw::vecvec<key, int>>);
+  check(from_paged);
+
+  auto multimap = cista::raw::mutable_fws_multimap<key, int>{};
+  for (auto const& x : expected) {
+    auto bucket = multimap.emplace_back();
+    for (auto const y : x) {
+      bucket.push_back(y);
+    }
+  }
+  auto from_multimap = cista::raw::make_vecvec(multimap);
+  static_assert(std::is_same_v<std::decay_t<decltype(from_multimap)>,
+                               cista::raw::vecvec<key, int>>);
+  check(from_multimap);
 }

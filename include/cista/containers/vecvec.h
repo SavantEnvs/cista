@@ -16,6 +16,7 @@ namespace cista {
 template <typename Key, typename DataVec, typename IndexVec>
 struct basic_vecvec {
   using key = Key;
+  using key_type = Key;
   using data_value_type = typename DataVec::value_type;
   using index_value_type = typename IndexVec::value_type;
 
@@ -428,10 +429,46 @@ struct basic_vecvec {
   IndexVec bucket_starts_;
 };
 
+namespace detail {
+
+template <typename Buckets>
+using bucket_value_t = std::decay_t<decltype(*std::begin(
+    *std::begin(std::declval<Buckets const&>())))>;
+
+template <typename VecVec, typename Buckets>
+VecVec make_vecvec(Buckets const& buckets) {
+  using size_type = typename VecVec::index_value_type;
+  auto n_buckets = size_type{0U};
+  auto n_entries = size_type{0U};
+  for (auto const& b : buckets) {
+    ++n_buckets;
+    n_entries += static_cast<size_type>(b.size());
+  }
+  auto v = VecVec{};
+  v.bucket_starts_.reserve(n_buckets + 1U);
+  v.data_.reserve(n_entries);
+  for (auto const& b : buckets) {
+    v.emplace_back(b);
+  }
+  return v;
+}
+
+}  // namespace detail
+
 namespace offset {
 
 template <typename K, typename V, typename SizeType = base_t<K>>
 using vecvec = basic_vecvec<K, vector<V>, vector<SizeType>>;
+
+template <typename Key = void, typename Buckets>
+auto make_vecvec(Buckets const& buckets) {
+  if constexpr (std::is_void_v<Key>) {
+    return make_vecvec<typename Buckets::key_type>(buckets);
+  } else {
+    return detail::make_vecvec<vecvec<Key, detail::bucket_value_t<Buckets>>>(
+        buckets);
+  }
+}
 
 }  // namespace offset
 
@@ -439,6 +476,16 @@ namespace raw {
 
 template <typename K, typename V, typename SizeType = base_t<K>>
 using vecvec = basic_vecvec<K, vector<V>, vector<SizeType>>;
+
+template <typename Key = void, typename Buckets>
+auto make_vecvec(Buckets const& buckets) {
+  if constexpr (std::is_void_v<Key>) {
+    return make_vecvec<typename Buckets::key_type>(buckets);
+  } else {
+    return detail::make_vecvec<vecvec<Key, detail::bucket_value_t<Buckets>>>(
+        buckets);
+  }
+}
 
 }  // namespace raw
 

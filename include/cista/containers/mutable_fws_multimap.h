@@ -22,6 +22,7 @@ namespace cista {
 template <typename T, typename SizeType, template <typename> typename Vec,
           std::size_t Log2MaxEntriesPerBucket = 20U>
 struct dynamic_fws_multimap_base {
+  using key_type = SizeType;
   using value_type = T;
   using size_type = base_t<SizeType>;
   using access_t = SizeType;

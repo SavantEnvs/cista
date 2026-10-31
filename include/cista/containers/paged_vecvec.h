@@ -6,6 +6,7 @@ namespace cista {
 
 template <typename Index, typename Paged, typename Key>
 struct paged_vecvec {
+  using key_type = Key;
   using index_t = Index;
   using data_t = Paged;
 
